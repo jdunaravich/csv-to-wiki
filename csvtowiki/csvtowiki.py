@@ -2,6 +2,13 @@ import argparse
 import csv
 import codecs
 
+MAGIC_VALUES = {
+    "GREEN": "#00B050",
+    "COMPLETE": "#0070C0",
+    "YELLOW": "#FFFF00",
+    "RED": "#FF0000"
+}
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='Turn a csv into a wiki table')
@@ -23,34 +30,21 @@ def parse_input_csv(full_path):
 
 
 def construct_wiki_table(headers, rows):
-    """== Schedule ==
-    {| border="1" style="border-collapse:collapse;" cellpadding="2" width="100%"
-    |- style="color:#FFFFFF; background-color:#5B9BD5; text-align:center; vertical-align:center; font-weight:bold; font-size:12pt;"
-    |style=""|Deliverable
-    |style=""|Start Date
-    |style=""|End Date
-    |style=""|Owner
-    |style=""|Status
-    |style=""|SIM
-    |- style="background-color:#FFFFFF; vertical-align:center;"
-    |style="text-align:center;"|FooBar
-    |style="text-align:center;"|FooBar
-    |style="text-align:center;"|FooBar
-    |style="text-align:center;"|FooBar
-    |style="text-align:center;"|FooBar
-    |style="text-align:center;"|FooBar
-    |}
-    """
     row_strings = []
     for row in rows:
         row_strings.append("""|- style="background-color:#FFFFFF; vertical-align:center;"\n""")
         for header in headers:
-            row_strings.append("""|style="text-align:center;"|{cell}\n""".format(cell=row[header]))
+            cell = row[header]
+            extra_style = ""
+            if cell in MAGIC_VALUES:
+                extra_style = "background-color:{magic}; ".format(magic=MAGIC_VALUES[cell])
+            row_strings.append("""|style="{extra_style}text-align:center;"|{cell}\n""".format(cell=cell, extra_style=extra_style))
     row_string = "".join(row_strings)
     boilerplate = ("""{| border="1" style="border-collapse:collapse;" cellpadding="2" width="100%"\n"""
                    """|- style="color:#FFFFFF; background-color:#5B9BD5; text-align:center; vertical-align:center; font-weight:bold; font-size:12pt;"\n""")
     end = "|}"
-    header_string = "".join(["""|style="width:16.66%%;"|%s\n""" % header for header in headers])
+    width = "{:0.2f}".format(100.0 / len(headers))
+    header_string = "".join(["""|style="width:{width}%%;"|{header}\n""".format(width=width, header=header) for header in headers])
     table = """{boilerplate}{header_string}{row_string}{end}""".format(**locals())
     return table
 
